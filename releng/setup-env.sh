@@ -4,23 +4,21 @@ releng_path=`dirname $0`
 
 build_os=$($releng_path/detect-os.sh)
 build_arch=$($releng_path/detect-arch.sh)
-build_variant=$($releng_path/detect-variant.sh)
 build_os_arch=$build_os-$build_arch
-build_machine=$build_os-$build_arch${build_variant:+-${build_variant}}
+build_machine=$build_os_arch
 
 if [ -n "$FRIDA_HOST" ]; then
   host_os=$(echo -n $FRIDA_HOST | cut -f1 -d"-")
   host_arch=$(echo -n $FRIDA_HOST | cut -f2 -d"-")
   host_variant=$(echo -n $FRIDA_HOST | cut -f3 -d"-")
-  host_os_arch=$host_os-$host_arch
-  host_machine=$host_os-$host_arch${host_variant:+-${host_variant}}
+  host_machine=$FRIDA_HOST
 else
   host_os=$build_os
   host_arch=$build_arch
-  host_variant=$build_variant
-  host_os_arch=$build_os_arch
-  host_machine=$build_machine
+  host_variant=""
+  host_machine=$host_os-$host_arch
 fi
+host_os_arch=$host_os-$host_arch
 
 case $host_os in
   macos|ios|watchos|tvos)
@@ -336,8 +334,8 @@ mkdir -p "$FRIDA_BUILD"
 
 case $host_os in
   linux)
-    if [ -n "$host_variant" ]; then
-      frida_libc=$host_variant
+    if [ -n "$FRIDA_LIBC" ]; then
+      frida_libc=$FRIDA_LIBC
     else
       case $host_arch in
         arm|armbe8)
@@ -357,12 +355,13 @@ case $host_os in
 
     case $host_arch in
       x86)
-        toolprefix="i686-linux-$frida_libc-"
-        common_flags+=("-march=pentium4")
+        common_flags+=("-m32" "-march=pentium4")
         c_like_flags+=("-mfpmath=sse" "-mstackrealign")
+        toolprefix="/usr/bin/"
         ;;
       x86_64)
-        toolprefix="x86_64-linux-$frida_libc-"
+        common_flags+=("-m64")
+        toolprefix="/usr/bin/"
         ;;
       arm)
         common_flags+=("-march=armv5t")
@@ -384,7 +383,8 @@ case $host_os in
         ;;
       arm64)
         common_flags+=("-march=armv8-a")
-        toolprefix="aarch64-linux-$frida_libc-"
+        #toolprefix="aarch64-linux-$frida_libc-"
+        toolprefix="aarch64-none-linux-$frida_libc-"
         ;;
       mips)
         common_flags+=("-march=mips1" "-mfp32")
@@ -416,44 +416,6 @@ case $host_os in
         ;;
     esac
 
-    if ! which ${toolprefix}gcc > /dev/null; then
-      resolved=no
-      if [ $host_machine = $build_machine ]; then
-        toolprefix=""
-        resolved=yes
-      elif [ $host_os = $build_os ] && [ "$host_variant" = "$build_variant" ]; then
-        case $host_arch in
-          x86)
-            case $build_arch in
-              x86*)
-                toolprefix=""
-                common_flags+=("-m32")
-                resolved=yes
-                ;;
-            esac
-            ;;
-          x86_64)
-            case $build_arch in
-              x86*)
-                toolprefix=""
-                common_flags+=("-m64")
-                resolved=yes
-                ;;
-            esac
-            ;;
-        esac
-      fi
-      if [ $resolved = no ]; then
-        first=$(echo $toolprefix | cut -f1 -d"-")
-        rest=$(echo $toolprefix | cut -f2- -d"-")
-        candidate=$(cd /usr/bin && ls -1 ${first}-*-${rest}gcc 2> /dev/null | head -1)
-        if [ -n "$candidate" ]; then
-          toolprefix=$(echo $candidate | rev | cut -c4- | rev)
-          resolved=yes
-        fi
-      fi
-    fi
-
     read_toolchain_variable cc CC ${toolprefix}gcc
     read_toolchain_variable cxx CXX ${toolprefix}g++
     eval cc=($cc)
@@ -475,7 +437,7 @@ case $host_os in
     cxx_link_flags+=("-static-libstdc++")
 
     read_toolchain_variable ld LD ${toolprefix}ld
-    if "${ld[@]}" --version 2> /dev/null | grep -q "GNU gold"; then
+    if "${ld[@]}" --version | grep -q "GNU gold"; then
       linker_flags+=("-Wl,--icf=all")
       linker_flavor=gold
     fi
@@ -789,6 +751,14 @@ case $host_os in
 
         host_cpu="armv6"
         ;;
+      arm64)
+        qnx_host=aarch64-unknown-nto-qnx7.1.0
+        qnx_sysroot=$QNX_TARGET/aarch64le
+
+        common_flags+=("-march=armv8-a")
+
+        host_cpu="aarch64"
+        ;;
       *)
         echo "Unsupported QNX architecture" > /dev/stderr
         exit 1
@@ -814,6 +784,7 @@ case $host_os in
 
     common_flags+=("--sysroot=$qnx_sysroot")
     c_like_flags+=("-ffunction-sections" "-fdata-sections")
+    #linker_flags+=("-lm -lc -lsocket" "-static-libgcc" "-Wl,--gc-sections" "-L$(dirname $qnx_sysroot/lib/gcc/4.8.3/libstdc++.a)")
     linker_flags+=("-static-libgcc" "-Wl,--gc-sections" "-L$(dirname $qnx_sysroot/lib/gcc/4.8.3/libstdc++.a)")
 
     cxx_link_flags+=("-static-libstdc++" )
@@ -1049,7 +1020,7 @@ array_to_args raw_cxx_link_flags "${cxx_link_flags[@]}"
   fi
   echo ""
   echo "[properties]"
-  if [ $host_machine != $build_machine ]; then
+  if [ $host_os != $build_os ]; then
     echo "needs_exe_wrapper = true"
     echo ""
   fi

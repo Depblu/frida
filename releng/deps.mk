@@ -596,7 +596,6 @@ build/$2-%/manifest/$1.pkg: build/$2-env-%.rc deps/.$1-stamp \
 	@$(call print-status,$1,Building)
 	@prefix=$$(shell pwd)/build/$2-$$*; \
 	builddir=build/$2-tmp-$$*/$1; \
-	$(RM) -r $$$$builddir; \
 	mkdir -p $$$$builddir; \
 	(set -x \
 		&& . build/$2-env-$$*.rc \

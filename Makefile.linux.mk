@@ -89,6 +89,7 @@ gum-android-arm: build/frida-android-arm/lib/pkgconfig/frida-gum-1.0.pc ##@gum B
 gum-android-arm64: build/frida-android-arm64/lib/pkgconfig/frida-gum-1.0.pc ##@gum Build for Android/arm64
 gum-qnx-arm: build/frida_thin-qnx-arm/lib/pkgconfig/frida-gum-1.0.pc ##@gum Build for QNX/arm
 gum-qnx-armeabi: build/frida_thin-qnx-armeabi/lib/pkgconfig/frida-gum-1.0.pc ##@gum Build for QNX/armeabi
+gum-qnx-arm64: build/frida_thin-qnx-arm64/lib/pkgconfig/frida-gum-1.0.pc ##@gum Build for QNX/armeabi
 
 
 define make-gum-rules
@@ -121,6 +122,8 @@ check-gum-linux-armhf: gum-linux-armhf ##@gum Run tests for Linux/armhf
 	build/tmp_thin-linux-armhf/frida-gum/tests/gum-tests $(test_args)
 check-gum-linux-arm64: gum-linux-arm64 ##@gum Run tests for Linux/arm64
 	build/tmp_thin-linux-arm64/frida-gum/tests/gum-tests $(test_args)
+check-gum-qnx-arm64: gum-qnx-arm64 ##@gum Run tests for QNX/arm64
+	build/tmp_thin-qnx-arm64/frida-gum/tests/gum-tests $(test_args)
 
 
 core-linux-x86: build/frida-linux-x86/lib/pkgconfig/frida-core-1.0.pc ##@core Build for Linux/x86
@@ -141,6 +144,7 @@ core-android-arm: build/frida-android-arm/lib/pkgconfig/frida-core-1.0.pc ##@cor
 core-android-arm64: build/frida-android-arm64/lib/pkgconfig/frida-core-1.0.pc ##@core Build for Android/arm64
 core-qnx-arm: build/frida_thin-qnx-arm/lib/pkgconfig/frida-core-1.0.pc ##@core Build for QNX/arm
 core-qnx-armeabi: build/frida_thin-qnx-armeabi/lib/pkgconfig/frida-core-1.0.pc ##@core Build for QNX/armeabi
+core-qnx-arm64: build/frida_thin-qnx-arm64/lib/pkgconfig/frida-core-1.0.pc ##@core Build for QNX/armeabi
 
 build/tmp-linux-x86/frida-core/.frida-ninja-stamp: build/.frida-core-submodule-stamp build/frida-linux-x86/lib/pkgconfig/frida-gum-1.0.pc
 	. build/frida-env-linux-x86.rc; \
