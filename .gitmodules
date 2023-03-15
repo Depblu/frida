@@ -28,3 +28,6 @@
 [submodule "frida-go"]
 	path = frida-go
 	url = https://github.com/frida/frida-go
+[submodule "frida-java-bridge-qnx"]
+	path = frida-java-bridge-qnx
+	url = git@github.com:Depblu/frida-java-bridge-qnx.git
